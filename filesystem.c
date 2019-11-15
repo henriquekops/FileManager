@@ -1,3 +1,4 @@
+// Authors: Carlos S. Castro, Gabriel C. Silva & Henrique R. Kops
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
@@ -7,7 +8,7 @@
 #define FAT_SIZE		(BLOCKS * 2) 					// size of fat (4096 = 2048 * 16 bits - HEX)
 #define FAT_BLOCKS		(FAT_SIZE / BLOCK_SIZE) 		// quantity of fat blocks (4)
 #define ROOT_BLOCK		FAT_BLOCKS 						// position of root block (5)
-#define DIR_ENTRY_SIZE		32 							// size of dir entries
+#define DIR_ENTRY_SIZE	32 								// size of dir entries
 #define DIR_ENTRIES		(BLOCK_SIZE / DIR_ENTRY_SIZE) 	// quantity of dir entries
 
 int16_t fat[BLOCKS];
@@ -16,6 +17,7 @@ int8_t data_block[BLOCK_SIZE];
 
 /*
 	STRUCTS
+	=======
 */
 
 
@@ -29,6 +31,7 @@ struct dir_entry_s {
 
 /*
 	DEFAULT AUXILIARY METHODS
+	=========================
 */
 
 
@@ -82,7 +85,7 @@ void write_fat(char *file, int16_t *fat)
 
 void read_dir_entry(int32_t block, int32_t entry, struct dir_entry_s *dir_entry)
 {
-	/* reads a directory entry from a directory */
+	/* reads a DIRECTORY ENTRY from a directory */
 	read_block("filesystem.dat", block, data_block);
 	memcpy(dir_entry, &data_block[entry * sizeof(struct dir_entry_s)], sizeof(struct dir_entry_s));
 }
@@ -90,7 +93,7 @@ void read_dir_entry(int32_t block, int32_t entry, struct dir_entry_s *dir_entry)
 
 void write_dir_entry(int block, int entry, struct dir_entry_s *dir_entry)
 {
-	/* writes a directory entry in a directory */
+	/* writes a DIRECTORY ENTRY in a directory */
 	read_block("filesystem.dat", block, data_block);
 	memcpy(&data_block[entry * sizeof(struct dir_entry_s)], dir_entry, sizeof(struct dir_entry_s));
 	write_block("filesystem.dat", block, data_block);
@@ -99,10 +102,12 @@ void write_dir_entry(int block, int entry, struct dir_entry_s *dir_entry)
 
 /*
 	SHELL AUXILIARY METHODS
+	=======================
 */
 
 
-int16_t fat_free(int16_t* fat) {
+int16_t fat_free(int16_t *fat) {
+	/* check for the first free block in FAT */
 	int16_t first_block;
 	for (first_block = ROOT_BLOCK + 1; first_block < BLOCKS; first_block++) {
 		if (fat[first_block] == 0) {
@@ -113,7 +118,8 @@ int16_t fat_free(int16_t* fat) {
 }
 
 
-int32_t dir_free(char* filename, struct dir_entry_s dir_entry) {
+int32_t dir_free(char *filename, struct dir_entry_s dir_entry) {
+	/* check for the first block in DIR ENTRY + name validation */
 	int32_t entry;
 	for (entry = 0; entry < DIR_ENTRY_SIZE; entry++) {
 		read_dir_entry(ROOT_BLOCK, entry, &dir_entry);
@@ -131,23 +137,24 @@ int32_t dir_free(char* filename, struct dir_entry_s dir_entry) {
 
 /*
 	SHELL INTERACTION METHODS
+	=========================
 */
 
 
-int16_t* init(void)
+void init(int16_t *fat)
 {
+	
+	FILE *f;
+	int32_t fat_itr;
+	int32_t block_itr;
 
 	/* reinitialize disk */
 	remove("filesystem.dat");
-	
-	FILE *f;
-	
 	f = fopen("filesystem.dat", "a");
 	fclose(f);
 
 	/* initialize fat */
-	int32_t fat_itr;
-
+	
 	for (fat_itr = 0; fat_itr < FAT_BLOCKS; fat_itr++) {
 		fat[fat_itr] = 0x7ffe;
 	}
@@ -161,8 +168,7 @@ int16_t* init(void)
 	write_fat("filesystem.dat", fat);
 
 	/* initialize data blocks */
-	int32_t block_itr;
-
+	
 	for (block_itr = 0; block_itr < BLOCK_SIZE; block_itr++)
 	{
 		data_block[block_itr] = 0;
@@ -174,27 +180,31 @@ int16_t* init(void)
 	{
 		write_block("filesystem.dat", block_itr, data_block);
 	}
-
-	return fat;
 }
 
 
 void ls(struct dir_entry_s dir_entry)
 {
-	/* list entries from the root directory */
+	/* list entries starting from the root directory */
 	int32_t i;
 
-	printf("ENTRY FILE ATTR FIRST SIZE\n");
+	printf("ENTRY \t| \tATTR \t| \tFIRST \t| \tSIZE \t| \tFILE\n");
 	for (i = 0; i < DIR_ENTRIES; i++) {
 		read_dir_entry(ROOT_BLOCK, i, &dir_entry);
-		printf("%d %s %d %d %d\n", 
-			i, dir_entry.filename, dir_entry.attributes, dir_entry.first_block, dir_entry.size);
+		printf("%d \t| \t%d \t| \t%d \t| \t%d \t| \t%s\n", 
+			i, dir_entry.attributes, dir_entry.first_block, dir_entry.size, dir_entry.filename);
 	}
 }
 
 
-void create(char* filename, struct dir_entry_s dir_entry, int16_t* fat)
+void mkdir(void) {
+	printf("MKDIR");
+}
+
+
+void create(char *filename, struct dir_entry_s dir_entry, int16_t *fat)
 {
+	/* crete a new file in a directory */
 	int16_t first_block = fat_free(fat);
 	int32_t entry = dir_free(filename, dir_entry);
 
@@ -204,7 +214,10 @@ void create(char* filename, struct dir_entry_s dir_entry, int16_t* fat)
 		dir_entry.attributes = 0x01;
 		dir_entry.first_block = first_block;
 		dir_entry.size = 0;
-		write_dir_entry(ROOT_BLOCK, entry, &dir_entry);
+		write_dir_entry(ROOT_BLOCK, entry, &dir_entry); // change root block
+
+		fat[first_block] = 0X7fff;
+		write_fat("filesystem.dat", fat);
 	}
 	else {
 		printf("You cannot enter existing filename!");
@@ -214,57 +227,117 @@ void create(char* filename, struct dir_entry_s dir_entry, int16_t* fat)
 
 /*
 	EXECUTION
+	=========
 */
 
 
 int main(int argc, char *argv[])
 {
-	int running = 1;
-	char* f_command;
-	char* s_command;
-	int16_t* fat;
+	char f_command [10]; // obrigartory first command in runtime (e.g. ${init} )
+	char s_command [50]; // optional command in runtime (e.g. $create {filename} )
+
+	int fat_in_memory = 0; // validate initialization
+	char *init_error_message = "Please, use $init or $load first";
 
 	struct dir_entry_s dir_entry;
 
-	while (running) {
+	while (1) {
 		printf("\n$ ");
 		scanf("%s", f_command);
 
+		// INIT
 		if (strstr(f_command, "init")) {
-			fat = init();
+			init(fat);
+			fat_in_memory = 1;
 		}
+
+		//LOAD
 		else if (strstr(f_command , "load")) {
-			printf("LOAD");
+			read_fat("filesystem.dat", fat);
+			fat_in_memory = 1;
 		}
+
+		// LS
 		else if (strstr(f_command, "ls")) {
-			ls(dir_entry);
+			if (!fat_in_memory) {
+				printf("%s", init_error_message);
+			}
+			else {
+				ls(dir_entry);
+			}
 		}
+
+		// MKDIR
 		else if (strstr(f_command, "mkdir")) {
-			printf("MKDIR");
+			if (!fat_in_memory) {
+				printf("%s", init_error_message);
+			}
+			else {
+				mkdir();
+			}
 		}
+
+		// CREATE
 		else if (strstr(f_command, "create")) {
-			scanf("%s", s_command);
-			create(s_command, dir_entry, fat);
+			if (!fat_in_memory) {
+				printf("%s", init_error_message);
+			} 
+			else {
+				scanf("%s", s_command);
+				create(s_command, dir_entry, fat);
+			}
 		}
+
+		// UNLINK
 		else if (strstr(f_command, "unlink")) {
-			printf("UNLINK");
+			if (!fat_in_memory) {
+				printf("%s", init_error_message);
+			}
+			else {
+				printf("UNLINK");
+			}
 		}
+
+		// WRITE
 		else if (strstr(f_command, "write")) {
-			printf("WRITE"); // s_command
+			if (!fat_in_memory) {
+				printf("%s", init_error_message);
+			}
+			else {
+				printf("WRITE"); // s_command
+			}
 		}
+
+		// APPEND
 		else if (strstr(f_command, "append")) {
-			printf("APPEND"); // s_command
+			if (!fat_in_memory) {
+				printf("%s", init_error_message);
+			}
+			else {
+				printf("APPEND"); // s_command
+			}
 		}
+
+
+		// READ
 		else if (strstr(f_command, "read")) {
-			printf("READ");
+			if (!fat_in_memory) {
+				printf("%s", init_error_message);
+			}
+			else {
+				printf("READ");
+			}
 		}
+		
+		// EXIT
 		else if (strstr(f_command, "exit")) {
+			printf("Bye!\n");
 			break;
 		}
 		else {
 			printf("NOT FOUND!");
 		}
 	}
-	printf("Bye!\n");
+
 	return 0;
 }
