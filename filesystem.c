@@ -11,8 +11,12 @@
 #define DIR_ENTRY_SIZE	32 								// size of dir entries
 #define DIR_ENTRIES		(BLOCK_SIZE / DIR_ENTRY_SIZE) 	// quantity of dir entries
 
-int16_t fat[BLOCKS];
-int8_t data_block[BLOCK_SIZE];
+
+/* Memory data */
+
+int8_t data_block[BLOCK_SIZE];	// DATA BLOCKS
+int16_t fat[BLOCKS]; 			// FAT
+struct directory actual_dir;	// ACTUAL DIRECTORY
 
 
 /*
@@ -20,13 +24,20 @@ int8_t data_block[BLOCK_SIZE];
 	=======
 */
 
+struct directory
+{
+	int32_t block;				// current directory block
+	char *dirname;				// current directory name
+	char *filename_to_save;		// file in current directory
+};
+
 
 struct dir_entry_s 
 {
-	int8_t filename[25];
-	int8_t attributes;
-	int16_t first_block;
-	int32_t size;
+	int8_t filename[25];	// name
+	int8_t attributes;		// 0=free, 1=directory, 2=file
+	int16_t first_block;	// first block in DATA_BLOCKS
+	int32_t size;			// file/directory size
 };
 
 
@@ -129,15 +140,16 @@ int16_t fat_free()
 }
 
 
-int32_t dir_free(char *filename, struct dir_entry_s dir_entry) 
+int32_t dir_free(int32_t block, char *filename) // TODO: alter logic for blocking 31th dir_entry
 {
-	/* check for the first block in DIR ENTRY + name validation */
+	/* check for the first free entry in BLOCK + name validation */
 
 	int32_t entry;
+	struct dir_entry_s dir_entry;
 
 	for (entry = 0; entry < DIR_ENTRY_SIZE; entry++) 
 	{
-		read_dir_entry(ROOT_BLOCK, entry, &dir_entry);
+		read_dir_entry(block, entry, &dir_entry);
 
 		if (!strcmp((char *)&dir_entry.filename[0], filename)) 
 		{
@@ -154,6 +166,58 @@ int32_t dir_free(char *filename, struct dir_entry_s dir_entry)
 }
 
 
+
+int iter_dirs(char *path)
+{
+	/* search folder through argued path */
+
+	int32_t entry;
+	struct dir_entry_s dir_entry;
+
+	int dir_exists = 1;
+
+	char *last = strrchr(path, '/')+1;
+	char *token = strtok(path, "/");
+
+	actual_dir.filename_to_save = last;
+
+	while (token != last)
+	{
+		if (dir_exists)
+		{
+			for (entry = 0; entry < DIR_ENTRY_SIZE; entry++) 
+			{
+				read_dir_entry(actual_dir.block, entry, &dir_entry);
+
+				if (!strcmp((char *)&dir_entry.filename[0], token)) 
+				{
+					actual_dir.dirname = token;
+					actual_dir.block = dir_entry.first_block;
+					break;
+				}
+
+				else if (dir_entry.attributes == 0) 
+				{
+					printf("> directory '%s' doesn't exist\n", token);
+					dir_exists = 0;
+					break;
+				}
+			}
+		}
+		else 
+		{
+			printf("> returning to root\n");
+			actual_dir.block = ROOT_BLOCK;
+			actual_dir.dirname = "root";
+			actual_dir.filename_to_save = "";
+			break;
+		}
+		token = strtok(NULL, "/");
+	}
+	return dir_exists;
+}
+
+
 /*
 	SHELL INTERACTION METHODS
 	=========================
@@ -162,7 +226,8 @@ int32_t dir_free(char *filename, struct dir_entry_s dir_entry)
 
 void init()
 {
-	
+	/* reset system */
+
 	FILE *f;
 	int32_t fat_itr;
 	int32_t block_itr;
@@ -202,74 +267,135 @@ void init()
 	{
 		write_block("filesystem.dat", block_itr, data_block);
 	}
+
+	/* set actual directory */
+
+	actual_dir.dirname = "root";
+	actual_dir.block = ROOT_BLOCK;
 }
 
 
-void ls(struct dir_entry_s dir_entry)
+void ls(void)
 {
 	/* list entries starting from the root directory */
 
-	int32_t i;
+	int32_t entry_itr;
+	struct dir_entry_s dir_entry;
 
+	printf("\nDIRECTORY: %s\n", actual_dir.dirname);
 	printf("ENTRY \t| \tATTR \t| \tFIRST \t| \tSIZE \t| \tFILE\n");
 	
-	for (i = 0; i < DIR_ENTRIES; i++) 
+	for (entry_itr = 0; entry_itr < DIR_ENTRIES; entry_itr++) 
 	{
-		read_dir_entry(ROOT_BLOCK, i, &dir_entry);
+		read_dir_entry(actual_dir.block, entry_itr, &dir_entry);
 		printf("%d \t| \t%d \t| \t%d \t| \t%d \t| \t%s\n", 
-			i, dir_entry.attributes, dir_entry.first_block, dir_entry.size, dir_entry.filename);
+			entry_itr, dir_entry.attributes, dir_entry.first_block, dir_entry.size, dir_entry.filename);
 	}
 }
 
 
-void mkdir(char *dirname, struct dir_entry_s dir_entry) 
+void mkdir(char *dirname) 
 {
 	/* create a new DIR ENTRY over an existing one  */
 
-	int16_t first_block = fat_free();
-	int32_t entry = dir_free(dirname, dir_entry);
+	int block_exists = 1;
 
-	if (entry >= 0) 
+	if (strstr(dirname, "/") != NULL)
 	{
-		memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-		strcpy((char *)dir_entry.filename, dirname);
-		dir_entry.attributes = 0x02;
-		dir_entry.first_block = first_block;
-		dir_entry.size = 0;
-		write_dir_entry(ROOT_BLOCK, entry, &dir_entry); // change root block
-
-		fat[first_block] = 0x7ffd;
-		write_fat("filesystem.dat", fat);
+		block_exists = iter_dirs(dirname);
+		dirname = actual_dir.filename_to_save;
 	}
-	else 
+
+	if (block_exists)
 	{
-		printf("You cannot enter existing filename!");
+		struct dir_entry_s dir_entry;
+
+		int16_t first_block = fat_free();
+		int32_t entry = dir_free(actual_dir.block, actual_dir.dirname);
+		
+		if (entry >= 0) 
+		{
+			memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
+			strcpy((char *)dir_entry.filename, dirname);
+			dir_entry.attributes = 0x02;
+			dir_entry.first_block = first_block;
+			dir_entry.size = 0;
+			write_dir_entry(actual_dir.block, entry, &dir_entry);
+
+			actual_dir.filename_to_save = "";
+
+			fat[first_block] = 0x7ffd;
+			write_fat("filesystem.dat", fat);
+		}
+		else 
+		{
+			printf("> you cannot enter existing directory name\n");
+		}	
 	}
 }
 
 
-void create(char *filename, struct dir_entry_s dir_entry)
+void create(char *filename)
 {
 	/* create a new file in a DIR ENTRY */
 
-	int16_t first_block = fat_free();
-	int32_t entry = dir_free(filename, dir_entry);
+	int block_exists = 1;
 
-	if (entry >= 0) 
+	if (strstr(filename, "/") != NULL)
 	{
-		memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-		strcpy((char *)dir_entry.filename, filename);
-		dir_entry.attributes = 0x01;
-		dir_entry.first_block = first_block;
-		dir_entry.size = 0;
-		write_dir_entry(ROOT_BLOCK, entry, &dir_entry); // change root block
-
-		fat[first_block] = 0x7fff;
-		write_fat("filesystem.dat", fat);
+		block_exists = iter_dirs(filename);
+		filename = actual_dir.filename_to_save;
 	}
-	else 
+
+	if (block_exists) 
 	{
-		printf("You cannot enter existing filename!");
+		struct dir_entry_s dir_entry;
+
+		int16_t first_block = fat_free();
+		int32_t entry = dir_free(actual_dir.block, actual_dir.dirname);
+
+		if (entry >= 0) 
+		{
+			memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
+			strcpy((char *)dir_entry.filename, filename);
+			dir_entry.attributes = 0x01;
+			dir_entry.first_block = first_block;
+			dir_entry.size = 0;
+			write_dir_entry(actual_dir.block, entry, &dir_entry);
+
+			fat[first_block] = 0x7fff;
+			write_fat("filesystem.dat", fat);
+		}
+		else 
+		{
+			printf("> you cannot enter existing filename\n");
+		}
+	}
+}
+
+void cd(char *path)
+{
+	if (strstr(path, "/") != NULL)
+	{
+		strcat(path, ".");
+		int dir_exists = iter_dirs(path);
+		if (dir_exists == 1) {
+			printf("> now on '%s'\n", actual_dir.dirname);
+		}
+	}
+	else if (strstr(path, "..") != NULL)
+	{
+		actual_dir.dirname = "root";
+		actual_dir.block = ROOT_BLOCK;
+		printf("> now on '%s'\n", actual_dir.dirname);
+	}
+	else
+	{
+		strcat(path, "/.");
+		int dir_exists = iter_dirs(path);
+		if (dir_exists == 1) {
+			printf("> now on '%s'\n", actual_dir.dirname);
+		}
 	}
 }
 
@@ -286,7 +412,7 @@ int main(int argc, char *argv[])
 	char s_command [50]; // optional command in runtime (e.g. $create {filename} )
 
 	int fat_in_memory = 0; // validate initialization
-	char *init_error_message = "Please, use $init or $load first";
+	char *init_error_message = "> please, use $init or $load first\n";
 
 	struct dir_entry_s dir_entry;
 
@@ -306,6 +432,8 @@ int main(int argc, char *argv[])
 		else if (strstr(f_command , "load")) 
 		{
 			read_fat("filesystem.dat", fat);
+			actual_dir.block = ROOT_BLOCK;
+			actual_dir.dirname = "root";
 			fat_in_memory = 1;
 		}
 
@@ -318,7 +446,7 @@ int main(int argc, char *argv[])
 			}
 			else 
 			{
-				ls(dir_entry);
+				ls();
 			}
 		}
 
@@ -332,7 +460,7 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				mkdir(s_command, dir_entry);
+				mkdir(s_command);
 			}
 		}
 
@@ -346,7 +474,7 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				create(s_command, dir_entry);
+				create(s_command);
 			}
 		}
 
@@ -402,6 +530,20 @@ int main(int argc, char *argv[])
 				printf("READ");
 			}
 		}
+
+		// CD
+		else if (strstr(f_command, "cd")) 
+		{
+			if (!fat_in_memory) 
+			{
+				printf("%s", init_error_message);
+			}
+			else 
+			{
+				scanf("%s", s_command);
+				cd(s_command);
+			}
+		}
 		
 		// EXIT
 		else if (strstr(f_command, "exit")) 
@@ -409,9 +551,11 @@ int main(int argc, char *argv[])
 			printf("Bye!\n");
 			break;
 		}
+
+		// DEFAULT
 		else 
 		{
-			printf("NOT FOUND!");
+			printf("> command '%s' doent exist\n", f_command);
 		}
 	}
 
