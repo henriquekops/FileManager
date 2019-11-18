@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				unlink(s_command);
+				rm(s_command);
 			}
 		}
 
@@ -159,6 +159,26 @@ int main(int argc, char *argv[])
 				cd(s_command);
 			}
 		}
+
+		// HELP
+		else if (strstr(f_command, "help"))
+		{
+			printf(
+				"Commands: \n"\
+				"\tExample:\n"\
+				"\t\t$ {command}: {explanation} {accepts path}\n\n"\
+				"\tDefinitions: \n"\
+				"\t\t$ init\t\t:\tReset system\t\t\t\t0\n"\
+				"\t\t$ load\t\t:\tLoad system data from filesystem.dat\t0\n"\
+				"\t\t$ ls\t\t:\tList current directory entries\t\t0\n"\
+				"\t\t$ mkdir\t\t:\tCreate a directory entry\t\t1\n"\
+				"\t\t$ create\t:\tCreate a file in a directory\t\t1\n"\
+				"\t\t$ unlink\t:\tDelete a file or directory\t\t1\n"\
+				"\t\t$ read\t\t:\tRead a file's content\t\t\t0\n"\
+				"\t\t$ write\t\t:\tWrite content to a file\t\t\t0\n"\
+				"\t\t$ append\t:\tAppend content to a file\t\t0\n"
+			);
+		}
 		
 		// EXIT
 		else if (strstr(f_command, "exit")) 
@@ -170,7 +190,7 @@ int main(int argc, char *argv[])
 		// DEFAULT
 		else 
 		{
-			printf("> command '%s' doesn't exist\n", f_command);
+			printf("> '%s' is not a command\n", f_command);
 		}
 	}
 

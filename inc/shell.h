@@ -27,7 +27,7 @@
 
     void create(char *path);
 
-    void unlink(char *path);
+    void rm(char *path);
 
     void cd(char *path);
 

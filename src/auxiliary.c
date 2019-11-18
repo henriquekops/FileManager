@@ -106,23 +106,26 @@ struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 			{
 				read_dir_entry(block, entry, dir_entry);
 
-				if (dir_entry->attributes == 0x01) 
+				if (!strcmp((char *)dir_entry->filename, token)) 
 				{
-					printf("> '%s' is a file\n", token);
-					dir_exists = 0;
-					dir_entry = NULL;
-					break;
-				}
-				else if (!strcmp((char *)dir_entry->filename, token)) 
-				{
-					block = dir_entry->first_block;
-
-					if(enter_dir)
+					if (dir_entry->attributes == 0x01) 
 					{
-						actual_dir.block = block;
-						actual_dir.dirname = token;
+						printf("> '%s' is a file\n", token);
+						dir_exists = 0;
+						dir_entry = NULL;
+						break;
 					}
-					break;
+					else
+					{
+						block = dir_entry->first_block;
+
+						if(enter_dir)
+						{
+							actual_dir.block = block;
+							actual_dir.dirname = token;
+						}
+						break;
+					}
 				}
 
 				else if (dir_entry->attributes == 0) 

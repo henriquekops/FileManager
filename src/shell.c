@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 // project dependencies
 #include <definitions.h>
@@ -77,10 +78,17 @@ void init(void)
 /* load FAT from disk */
 void load(void)
 {
-	read_fat("filesystem.dat", fat);
-	actual_dir.block = ROOT_BLOCK;
-	actual_dir.dirname = "root";
-	printf("> ok\n");
+	if (access( "filesystem.dat", F_OK ) != -1)
+	{
+		read_fat("filesystem.dat", fat);
+		actual_dir.block = ROOT_BLOCK;
+		actual_dir.dirname = "root";
+		printf("> ok\n");
+	}
+	else
+	{
+		printf("> filesystem.dat does not exist\n");
+	}
 }
 
 
@@ -198,7 +206,7 @@ void create(char *path)
 
 
 /* unlink a file or diretory from DIRECTORY ENTRY */
-void unlink(char *path)
+void rm(char *path)
 {
 	int32_t block;
 	int is_path = 0, unlink = 1;

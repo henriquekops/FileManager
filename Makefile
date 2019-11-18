@@ -13,5 +13,5 @@ shell.o: src/shell.c inc/shell.h
 auxiliary.o: src/auxiliary.c inc/auxiliary.h
 	gcc -o auxiliary.o -c src/auxiliary.c -Iinc
 
-default.o: src/default.c inc/default.h
-	gcc -o default.o -c src/default.c -Iinc
+manipulators.o: src/manipulators.c inc/manipulators.h
+	gcc -o manipulators.o -c src/manipulators.c -Iinc
