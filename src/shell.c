@@ -90,7 +90,7 @@ void ls(void)
 	int32_t entry_itr;
 	struct dir_entry_s dir_entry;
 
-	printf("\nDIRECTORY: %s\n", actual_dir.dirname);
+	printf("\nDIRECTORY: %s (block: %d)\n", actual_dir.dirname, actual_dir.block);
 	printf("ENTRY \t| \tATTR \t| \tFIRST \t| \tSIZE \t| \tFILE\n");
 	
 	for (entry_itr = 0; entry_itr < DIR_ENTRIES; entry_itr++) 
@@ -126,7 +126,10 @@ void mkdir(char *path)
 		{
 			create = 0;
 		}
-		block = actual_dir.block;
+		else
+		{
+			block = actual_dir.block;
+		}
 	}
 
 	if (create)
@@ -137,7 +140,7 @@ void mkdir(char *path)
 
 		if (entry >= 0)
 		{
-			create_dir_entry(path, 0x02, first_block, entry, dir_entry);
+			create_dir_entry(path, 0x02, first_block, entry, block, dir_entry);
 			fat[first_block] = 0x7ffd;
 			write_fat("filesystem.dat", fat);
 
@@ -183,7 +186,7 @@ void create(char *path)
 
 		if (entry >= 0) 
 		{
-			create_dir_entry(path, 0x01, first_block, entry, dir_entry);
+			create_dir_entry(path, 0x01, first_block, entry, block, dir_entry);
 
 			fat[first_block] = 0x7fff;
 			write_fat("filesystem.dat", fat);
@@ -236,7 +239,7 @@ void unlink(char *path)
 				if (dir_entry.attributes == 0x01) 
 				{
 					fat[dir_entry.first_block] = 0;
-					create_dir_entry("", 0x00, 0, entry, dir_entry);
+					create_dir_entry("", 0x00, 0, entry, block, dir_entry);
 					printf("> ok\n");
 				}
 				else if (dir_entry.attributes == 0x02)
@@ -244,7 +247,7 @@ void unlink(char *path)
 					if(dir_is_empty(dir_entry.first_block))
 					{
 						fat[dir_entry.first_block] = 0;
-						create_dir_entry("", 0x00, 0, entry, dir_entry);
+						create_dir_entry("", 0x00, 0, entry, block, dir_entry);
 						printf("> ok\n");
 					}
 					else

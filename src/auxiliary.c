@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 // project dependencies
 #include <default.h>
@@ -90,7 +91,7 @@ int dir_is_empty(int16_t block)
 struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 {
 	int32_t entry;
-	struct dir_entry_s *dir_entry;
+	struct dir_entry_s *dir_entry = (struct dir_entry_s*)malloc(sizeof(struct dir_entry_s));
 
 	int dir_exists = 1;
 	int32_t block = actual_dir.block;
@@ -99,15 +100,11 @@ struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 
 	while (token != delimiter)
 	{
-		printf("token: %s\n", token);
 		if (dir_exists)
 		{
-			printf("dir exists\n");
 			for (entry = 0; entry < DIR_ENTRY_SIZE; entry++) 
 			{
-				printf("reading entry = %d, block = %d\n", entry, block);
 				read_dir_entry(block, entry, dir_entry);
-				printf("entry read\n");
 
 				if (dir_entry->attributes == 0x01) 
 				{
@@ -119,11 +116,9 @@ struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 				else if (!strcmp((char *)dir_entry->filename, token)) 
 				{
 					block = dir_entry->first_block;
-					printf("block: %d\n", block);
 
 					if(enter_dir)
 					{
-						printf("updating actual\n");
 						actual_dir.block = block;
 						actual_dir.dirname = token;
 					}
@@ -156,12 +151,12 @@ struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 
 
 /* create a DIRECTORY ENTRY */
-void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, struct dir_entry_s dir_entry)
+void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, int32_t block, struct dir_entry_s dir_entry)
 {
 	memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
 	strcpy((char *)dir_entry.filename, filename);
 	dir_entry.attributes = attributes;
 	dir_entry.first_block = first_block;
 	dir_entry.size = 0;
-	write_dir_entry(actual_dir.block, entry, &dir_entry);
+	write_dir_entry(block, entry, &dir_entry);
 }
