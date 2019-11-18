@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 		// DEFAULT
 		else 
 		{
-			printf("> command '%s' doent exist\n", f_command);
+			printf("> command '%s' doesn't exist\n", f_command);
 		}
 	}
 

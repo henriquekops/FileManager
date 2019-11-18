@@ -87,46 +87,81 @@ int dir_is_empty(int16_t block)
 
 
 /* search folder through argued path */
-int iter_dirs(char *path, char *delimiter)
+struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 {
 	int32_t entry;
-	struct dir_entry_s dir_entry;
+	struct dir_entry_s *dir_entry;
 
 	int dir_exists = 1;
+	int32_t block = actual_dir.block;
 
 	char *token = strtok(path, "/");
 
 	while (token != delimiter)
 	{
+		printf("token: %s\n", token);
 		if (dir_exists)
 		{
+			printf("dir exists\n");
 			for (entry = 0; entry < DIR_ENTRY_SIZE; entry++) 
 			{
-				read_dir_entry(actual_dir.block, entry, &dir_entry);
+				printf("reading entry = %d, block = %d\n", entry, block);
+				read_dir_entry(block, entry, dir_entry);
+				printf("entry read\n");
 
-				if (!strcmp((char *)&dir_entry.filename[0], token)) 
+				if (dir_entry->attributes == 0x01) 
 				{
-					actual_dir.dirname = token;
-					actual_dir.block = dir_entry.first_block;
+					printf("> '%s' is a file\n", token);
+					dir_exists = 0;
+					dir_entry = NULL;
+					break;
+				}
+				else if (!strcmp((char *)dir_entry->filename, token)) 
+				{
+					block = dir_entry->first_block;
+					printf("block: %d\n", block);
+
+					if(enter_dir)
+					{
+						printf("updating actual\n");
+						actual_dir.block = block;
+						actual_dir.dirname = token;
+					}
 					break;
 				}
 
-				else if (dir_entry.attributes == 0) 
+				else if (dir_entry->attributes == 0) 
 				{
 					printf("> directory '%s' doesn't exist\n", token);
 					dir_exists = 0;
+					dir_entry = NULL;
 					break;
 				}
 			}
 		}
 		else 
 		{
-			printf("> returning to root\n");
-			actual_dir.block = ROOT_BLOCK;
-			actual_dir.dirname = "root";
+			if (enter_dir)
+			{
+				printf("> returning to root\n");
+				actual_dir.block = ROOT_BLOCK;
+				actual_dir.dirname = "root";
+			}
 			break;
 		}
 		token = strtok(NULL, "/");
 	}
-	return dir_exists;
+	return dir_entry;
+}
+
+
+/* create a DIRECTORY ENTRY */
+void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, struct dir_entry_s dir_entry)
+{
+	memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
+	strcpy((char *)dir_entry.filename, filename);
+	dir_entry.attributes = attributes;
+	dir_entry.first_block = first_block;
+	dir_entry.size = 0;
+	write_dir_entry(actual_dir.block, entry, &dir_entry);
 }

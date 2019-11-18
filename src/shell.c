@@ -80,12 +80,13 @@ void load(void)
 	read_fat("filesystem.dat", fat);
 	actual_dir.block = ROOT_BLOCK;
 	actual_dir.dirname = "root";
+	printf("> ok\n");
 }
 
 
 /* list entries starting from the root DIRECTORY ENTRY */
 void ls(void)
-{
+{	
 	int32_t entry_itr;
 	struct dir_entry_s dir_entry;
 
@@ -104,33 +105,44 @@ void ls(void)
 /* create a new DIRECTORY ENTRY over an existing one  */
 void mkdir(char *path) 
 {
-	printf("dir: %s", actual_dir.dirname);
-	int block_exists = 1;
+	int32_t block;
+	char *filename;
+	int is_path = 0, create = 1;
+	struct dir_entry_s *navigate_dir = NULL;
 
 	if (strstr(path, "/"))
 	{
 		char *delimiter = strrchr(path, '/')+1;
-		block_exists = iter_dirs(path, delimiter);
+		navigate_dir = iter_dirs(path, delimiter, 0);
 		path = delimiter;
+		is_path = 1;
 	}
 
-	if (block_exists)
+	if (navigate_dir) 
+	{
+		memset(filename, 0, sizeof(char));
+		strcpy(filename, (char *)navigate_dir->filename);
+		block = navigate_dir->first_block;
+	}
+	else
+	{
+		if (is_path)
+		{
+			create = 0;
+		}
+		filename = actual_dir.dirname;
+		block = actual_dir.block;
+	}
+
+	if (create)
 	{
 		struct dir_entry_s dir_entry;
-
 		int16_t first_block = fat_free();
-		printf("fat free: %d\n", first_block);
 		int32_t entry = dir_free(actual_dir.block, actual_dir.dirname);
 		
-		if (entry >= 0) 
+		if (entry >= 0)
 		{
-			memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-			strcpy((char *)dir_entry.filename, path);
-			dir_entry.attributes = 0x02;
-			dir_entry.first_block = first_block;
-			dir_entry.size = 0;
-			write_dir_entry(actual_dir.block, entry, &dir_entry);
-
+			create_dir_entry(path, 0x02, first_block, entry, dir_entry);
 			fat[first_block] = 0x7ffd;
 			write_fat("filesystem.dat", fat);
 
@@ -143,30 +155,44 @@ void mkdir(char *path)
 /* create a new file in a DIRECTORY ENTRY */
 void create(char *path)
 {
-	int block_exists = 1;
+	int32_t block;
+	char *filename;
+	int is_path = 0, create = 1;
+	struct dir_entry_s *navigate_dir = NULL;
 
-	if (strstr(path, "/")) // file/
+	if (strstr(path, "/"))
 	{
 		char *delimiter = strrchr(path, '/')+1;
-		block_exists = iter_dirs(path, delimiter);
+		navigate_dir = iter_dirs(path, delimiter, 0);
 		path = delimiter;
+		is_path = 1;
 	}
 
-	if (block_exists) 
+	if (navigate_dir) 
+	{
+		memset(filename, 0, sizeof(char));
+		strcpy(filename, (char *)navigate_dir->filename);
+		block = navigate_dir->first_block;
+	}
+	else
+	{
+		if (is_path)
+		{
+			create = 0;
+		}
+		filename = actual_dir.dirname;
+		block = actual_dir.block;
+	}
+
+	if (create)
 	{
 		struct dir_entry_s dir_entry;
-
 		int16_t first_block = fat_free();
-		int32_t entry = dir_free(actual_dir.block, actual_dir.dirname);
+		int32_t entry = dir_free(block, filename);
 
 		if (entry >= 0) 
 		{
-			memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-			strcpy((char *)dir_entry.filename, path);
-			dir_entry.attributes = 0x01;
-			dir_entry.first_block = first_block;
-			dir_entry.size = 0;
-			write_dir_entry(actual_dir.block, entry, &dir_entry);
+			create_dir_entry(path, 0x01, first_block, entry, dir_entry);
 
 			fat[first_block] = 0x7fff;
 			write_fat("filesystem.dat", fat);
@@ -178,47 +204,65 @@ void create(char *path)
 
 
 /* unlink a file or diretory from DIRECTORY ENTRY */
-void unlink(char *filename)
+void unlink(char *path)
 {
-	int32_t entry;
-	int32_t block = actual_dir.block;
-	struct dir_entry_s dir_entry;
+	int32_t block;
+	char *filename;
+	int is_path = 0, unlink = 1;
+	struct dir_entry_s *navigate_dir = NULL;
 
-	for(entry = 0; entry < DIR_ENTRY_SIZE; entry++)
+	if (strstr(path, "/"))
 	{
-		read_dir_entry(block, entry, &dir_entry);
+		char *delimiter = strrchr(path, '/')+1;
+		navigate_dir = iter_dirs(path, delimiter, 0);
+		path = delimiter;
+		is_path= 1;
+	}
 
-		if (!strcmp((char *)&dir_entry.filename[0], filename))
+	if (navigate_dir) 
+	{
+		memset(filename, 0, sizeof(char));
+		strcpy(filename, (char *)navigate_dir->filename);
+		block = navigate_dir->first_block;
+	}
+	else
+	{
+		if (is_path)
 		{
-			if (dir_entry.attributes == 0x01) 
-			{
-				fat[dir_entry.first_block] = 0;
+			unlink = 0;
+		}
+		filename = actual_dir.dirname;
+		block = actual_dir.block;
+	}
 
-				memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-				strcpy((char *)dir_entry.filename, "");
-				dir_entry.attributes = 0x00;
-				dir_entry.first_block = 0;
-				dir_entry.size = 0;
-				write_dir_entry(block, entry, &dir_entry);
-				printf("> ok\n");
-			}
-			else if (dir_entry.attributes == 0x02)
+	if (unlink)
+	{
+		int32_t entry;
+		struct dir_entry_s dir_entry;
+		for(entry = 0; entry < DIR_ENTRY_SIZE; entry++)
+		{
+			read_dir_entry(block, entry, &dir_entry);
+
+			if (!strcmp((char *)&dir_entry.filename[0], filename))
 			{
-				if(dir_is_empty(dir_entry.first_block))
+				if (dir_entry.attributes == 0x01) 
 				{
 					fat[dir_entry.first_block] = 0;
-
-					memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-					strcpy((char *)dir_entry.filename, "");
-					dir_entry.attributes = 0x00;
-					dir_entry.first_block = 0;
-					dir_entry.size = 0;
-					write_dir_entry(block, entry, &dir_entry);
+					create_dir_entry("", 0x00, 0, entry, dir_entry);
 					printf("> ok\n");
 				}
-				else
+				else if (dir_entry.attributes == 0x02)
 				{
-					printf("> you need to empty directory '%s' first\n", dir_entry.filename);
+					if(dir_is_empty(dir_entry.first_block))
+					{
+						fat[dir_entry.first_block] = 0;
+						create_dir_entry("", 0x00, 0, entry, dir_entry);
+						printf("> ok\n");
+					}
+					else
+					{
+						printf("> you need to empty directory '%s' first\n", dir_entry.filename);
+					}
 				}
 			}
 		}
@@ -237,8 +281,8 @@ void cd(char *path)
 	}
 	else
 	{
-		int dir_exists = iter_dirs(path, NULL);
-		if (dir_exists == 1) {
+		struct dir_entry_s *dir_exists = iter_dirs(path, NULL, 1);
+		if (dir_exists) {
 			printf("> now on '%s'\n", actual_dir.dirname);
 		}
 	}

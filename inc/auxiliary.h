@@ -23,6 +23,8 @@
 
    int dir_is_empty(int16_t block);
    
-   int iter_dirs(char *path, char *delimiter);
+   struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir);
+
+   void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, struct dir_entry_s dir_entry);
 
 #endif
