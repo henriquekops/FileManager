@@ -1,3 +1,13 @@
-a.exe
-a.out
+# Executables
+run.exe
+run.out
+run
+
+# Files
 filesystem.dat
+
+# IDEA
+.vscode
+
+# Objects
+*.o
