@@ -106,7 +106,6 @@ void ls(void)
 void mkdir(char *path) 
 {
 	int32_t block;
-	char *filename;
 	int is_path = 0, create = 1;
 	struct dir_entry_s *navigate_dir = NULL;
 
@@ -117,11 +116,8 @@ void mkdir(char *path)
 		path = delimiter;
 		is_path = 1;
 	}
-
 	if (navigate_dir) 
 	{
-		memset(filename, 0, sizeof(char));
-		strcpy(filename, (char *)navigate_dir->filename);
 		block = navigate_dir->first_block;
 	}
 	else
@@ -130,7 +126,6 @@ void mkdir(char *path)
 		{
 			create = 0;
 		}
-		filename = actual_dir.dirname;
 		block = actual_dir.block;
 	}
 
@@ -138,8 +133,8 @@ void mkdir(char *path)
 	{
 		struct dir_entry_s dir_entry;
 		int16_t first_block = fat_free();
-		int32_t entry = dir_free(actual_dir.block, actual_dir.dirname);
-		
+		int32_t entry = dir_free(block, path);
+
 		if (entry >= 0)
 		{
 			create_dir_entry(path, 0x02, first_block, entry, dir_entry);
@@ -156,7 +151,6 @@ void mkdir(char *path)
 void create(char *path)
 {
 	int32_t block;
-	char *filename;
 	int is_path = 0, create = 1;
 	struct dir_entry_s *navigate_dir = NULL;
 
@@ -170,8 +164,6 @@ void create(char *path)
 
 	if (navigate_dir) 
 	{
-		memset(filename, 0, sizeof(char));
-		strcpy(filename, (char *)navigate_dir->filename);
 		block = navigate_dir->first_block;
 	}
 	else
@@ -180,7 +172,6 @@ void create(char *path)
 		{
 			create = 0;
 		}
-		filename = actual_dir.dirname;
 		block = actual_dir.block;
 	}
 
@@ -188,7 +179,7 @@ void create(char *path)
 	{
 		struct dir_entry_s dir_entry;
 		int16_t first_block = fat_free();
-		int32_t entry = dir_free(block, filename);
+		int32_t entry = dir_free(block, path);
 
 		if (entry >= 0) 
 		{
@@ -207,7 +198,6 @@ void create(char *path)
 void unlink(char *path)
 {
 	int32_t block;
-	char *filename;
 	int is_path = 0, unlink = 1;
 	struct dir_entry_s *navigate_dir = NULL;
 
@@ -221,8 +211,6 @@ void unlink(char *path)
 
 	if (navigate_dir) 
 	{
-		memset(filename, 0, sizeof(char));
-		strcpy(filename, (char *)navigate_dir->filename);
 		block = navigate_dir->first_block;
 	}
 	else
@@ -231,7 +219,6 @@ void unlink(char *path)
 		{
 			unlink = 0;
 		}
-		filename = actual_dir.dirname;
 		block = actual_dir.block;
 	}
 
@@ -239,12 +226,12 @@ void unlink(char *path)
 	{
 		int32_t entry;
 		struct dir_entry_s dir_entry;
-		
+
 		for(entry = 0; entry < DIR_ENTRY_SIZE; entry++)
 		{
 			read_dir_entry(block, entry, &dir_entry);
 
-			if (!strcmp((char *)&dir_entry.filename[0], filename))
+			if (!strcmp((char *)&dir_entry.filename[0], path))
 			{
 				if (dir_entry.attributes == 0x01) 
 				{
