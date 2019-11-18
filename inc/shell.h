@@ -27,7 +27,7 @@
 
     void create(char *path);
 
-    void unlink(char *filename);
+    void unlink(char *path);
 
     void cd(char *path);
 

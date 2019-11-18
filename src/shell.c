@@ -239,6 +239,7 @@ void unlink(char *path)
 	{
 		int32_t entry;
 		struct dir_entry_s dir_entry;
+		
 		for(entry = 0; entry < DIR_ENTRY_SIZE; entry++)
 		{
 			read_dir_entry(block, entry, &dir_entry);

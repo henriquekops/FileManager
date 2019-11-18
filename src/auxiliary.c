@@ -60,7 +60,7 @@ int32_t dir_free(int32_t block, char *filename)
 
 		else if (entry == 31)
 		{
-			printf("> there is no space at '%s' to add more stuff\n", actual_dir.dirname);
+			printf("> there is no space at '%s'\n", actual_dir.dirname);
 			entry = -1;
 			break;
 		}
