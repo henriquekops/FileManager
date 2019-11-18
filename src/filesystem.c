@@ -7,7 +7,6 @@
 
 // built-in dependencies
 #include <stdio.h>
-#include <stdint.h>
 #include <string.h>
 
 // project dependencies
@@ -23,6 +22,11 @@
 
 */
 
+void cls_screen(void)
+{
+	int i = 0;
+	for(i = 0; i < 1000; i++) printf("\n");
+}
 
 int main(int argc, char *argv[])
 {
@@ -32,10 +36,17 @@ int main(int argc, char *argv[])
 	int fat_in_memory = 0; // validate initialization
 	char *init_error_message = "> please, use $init or $load first\n";
 
+	cls_screen();
+
+	printf("WELCOME TO YOUR FILESYSTEM!\n");
+	printf("If you need any help, type 'help'\n");
+
 	while (1) 
 	{
 		printf("\n$ ");
 		scanf("%s", f_command);
+		
+		cls_screen();
 
 		// INIT
 		if (strstr(f_command, "init")) 

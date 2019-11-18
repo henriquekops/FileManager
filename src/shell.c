@@ -98,13 +98,13 @@ void ls(void)
 	int32_t entry_itr;
 	struct dir_entry_s dir_entry;
 
-	printf("\nDIRECTORY: %s (block: %d)\n", actual_dir.dirname, actual_dir.block);
-	printf("ENTRY \t| \tATTR \t| \tFIRST \t| \tSIZE \t| \tFILE\n");
+	printf("\nDIRECTORY: %s\t\tBLOCK: %d\n\n", actual_dir.dirname, actual_dir.block);
+	printf("ENTRY\t|\tATTR\t|\tFIRST\t|\tSIZE \t|\tFILE\n");
 	
 	for (entry_itr = 0; entry_itr < DIR_ENTRIES; entry_itr++) 
 	{
 		read_dir_entry(actual_dir.block, entry_itr, &dir_entry);
-		printf("%d \t| \t%d \t| \t%d \t| \t%d \t| \t%s\n", 
+		printf("%d\t|\t%d\t|\t%d\t|\t%d\t|\t%s\n", 
 			entry_itr, dir_entry.attributes, dir_entry.first_block, dir_entry.size, dir_entry.filename);
 	}
 }
@@ -235,6 +235,8 @@ void rm(char *path)
 
 	if (unlink)
 	{
+		int found = 0;
+
 		int32_t entry;
 		struct dir_entry_s dir_entry;
 
@@ -244,6 +246,8 @@ void rm(char *path)
 
 			if (!strcmp((char *)&dir_entry.filename[0], path))
 			{
+				found = 1;
+
 				if (dir_entry.attributes == 0x01) 
 				{
 					fat[dir_entry.first_block] = 0;
@@ -264,7 +268,12 @@ void rm(char *path)
 					}
 				}
 			}
+			break;
 		}
+		if (!found) 
+		{
+			printf("> '%s' doesn't exists", path);
+		}	
 	}
 }
 
