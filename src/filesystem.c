@@ -30,8 +30,9 @@ void cls_screen(void)
 
 int main(int argc, char *argv[])
 {
-	char f_command [10]; // obrigartory first command in runtime (e.g. ${init} )
-	char s_command [50]; // optional command in runtime (e.g. $create {filename} )
+	char f_command [10]; // obrigartory command in runtime 	(e.g.	${init} )
+	char s_command [50]; // optional path field 			(e.g.	$create {path} )
+	char t_command [50]; // optional file content 			( e.g.	$write path {content} )
 
 	int fat_in_memory = 0; // validate initialization
 	char *init_error_message = "> please, use $init or $load first\n";
@@ -45,20 +46,20 @@ int main(int argc, char *argv[])
 	{
 		printf("\n$ ");
 		scanf("%s", f_command);
-		
-		cls_screen();
+
+		// cls_screen();
 
 		// INIT
 		if (strstr(f_command, "init")) 
 		{
-			init();
+			minit();
 			fat_in_memory = 1;
 		}
 
 		//LOAD
 		else if (strstr(f_command , "load")) 
 		{
-			load();
+			mload();
 			fat_in_memory = 1;
 		}
 
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
 			}
 			else 
 			{
-				ls();
+				mls();
 			}
 		}
 
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				mkdir(s_command);
+				mmkdir(s_command);
 			}
 		}
 
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				create(s_command);
+				mcreate(s_command);
 			}
 		}
 
@@ -113,7 +114,21 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				rm(s_command);
+				munlink(s_command);
+			}
+		}
+
+		// READ
+		else if (strstr(f_command, "read")) 
+		{
+			if (!fat_in_memory) 
+			{
+				printf("%s", init_error_message);
+			}
+			else 
+			{
+				scanf("%s", s_command);
+				mread(s_command);
 			}
 		}
 
@@ -126,7 +141,9 @@ int main(int argc, char *argv[])
 			}
 			else 
 			{
-				printf("WRITE"); // s_command
+				scanf("%s", s_command);
+				scanf("%s", t_command);
+				mwrite(s_command, t_command);
 			}
 		}
 
@@ -143,20 +160,6 @@ int main(int argc, char *argv[])
 			}
 		}
 
-
-		// READ
-		else if (strstr(f_command, "read")) 
-		{
-			if (!fat_in_memory) 
-			{
-				printf("%s", init_error_message);
-			}
-			else 
-			{
-				printf("READ");
-			}
-		}
-
 		// CD
 		else if (strstr(f_command, "cd")) 
 		{
@@ -167,7 +170,7 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				cd(s_command);
+				mcd(s_command);
 			}
 		}
 

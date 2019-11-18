@@ -8,8 +8,10 @@
 // built-in dependencies
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+
 
 // project dependencies
 #include <definitions.h>
@@ -24,17 +26,11 @@
 
 
 /* reset system data structures*/
-void init(void)
+void minit(void)
 {
 	FILE *f;
 	int32_t fat_itr;
 	int32_t block_itr;
-
-	/* reinitialize disk */
-
-	remove("filesystem.dat");
-	f = fopen("filesystem.dat", "a");
-	fclose(f);
 
 	/* initialize fat */
 	
@@ -76,7 +72,7 @@ void init(void)
 
 
 /* load FAT from disk */
-void load(void)
+void mload(void)
 {
 	if (access( "filesystem.dat", F_OK ) != -1)
 	{
@@ -93,7 +89,7 @@ void load(void)
 
 
 /* list entries starting from the root DIRECTORY ENTRY */
-void ls(void)
+void mls(void)
 {	
 	int32_t entry_itr;
 	struct dir_entry_s dir_entry;
@@ -111,7 +107,7 @@ void ls(void)
 
 
 /* create a new DIRECTORY ENTRY over an existing one  */
-void mkdir(char *path) 
+void mmkdir(char *path) 
 {
 	int32_t block;
 	int is_path = 0, create = 1;
@@ -159,7 +155,7 @@ void mkdir(char *path)
 
 
 /* create a new file in a DIRECTORY ENTRY */
-void create(char *path)
+void mcreate(char *path)
 {
 	int32_t block;
 	int is_path = 0, create = 1;
@@ -206,7 +202,7 @@ void create(char *path)
 
 
 /* unlink a file or diretory from DIRECTORY ENTRY */
-void rm(char *path)
+void munlink(char *path)
 {
 	int32_t block;
 	int is_path = 0, unlink = 1;
@@ -278,8 +274,120 @@ void rm(char *path)
 }
 
 
+void mread(char *path)
+{
+	int32_t block;
+	int is_path = 0, read = 1;
+	struct dir_entry_s *navigate_dir = NULL;
+
+	if (strstr(path, "/"))
+	{
+		char *delimiter = strrchr(path, '/')+1;
+		navigate_dir = iter_dirs(path, delimiter, 0);
+		path = delimiter;
+		is_path = 1;
+	}
+
+	if (navigate_dir) 
+	{
+		block = navigate_dir->first_block;
+	}
+	else
+	{
+		if (is_path)
+		{
+			read = 0;
+		}
+		block = actual_dir.block;
+	}
+	if (read) 
+	{
+		int found = 0;
+		int32_t dir_itr;
+		struct dir_entry_s *dir_entry;
+
+		for(dir_itr = 0; dir_itr < DIR_ENTRY_SIZE; dir_itr++)
+		{
+			read_dir_entry(block, dir_itr, dir_entry);
+			if (!strcmp((char *)dir_entry->filename, path))
+			{
+				block = dir_entry->first_block;
+				found = 1;
+				break;
+			}
+		}
+		if (found)
+		{
+			signed char *content = (signed char*)malloc(BLOCK_SIZE*sizeof(signed char));
+			read_block("filesystem.dat", block, content);
+			printf("\n%s\n", content);
+		}
+		else
+		{
+			printf("> '%s' doesn't exist\n", path);
+		}
+	}
+}
+
+
+void mwrite(char *path, char *content)
+{
+	int32_t block;
+	int is_path = 0, write = 1;
+	struct dir_entry_s *navigate_dir = NULL;
+
+	if (strstr(path, "/"))
+	{
+		char *delimiter = strrchr(path, '/')+1;
+		navigate_dir = iter_dirs(path, delimiter, 0);
+		path = delimiter;
+		is_path = 1;
+	}
+
+	if (navigate_dir) 
+	{
+		block = navigate_dir->first_block;
+	}
+	else
+	{
+		if (is_path)
+		{
+			write = 0;
+		}
+		block = actual_dir.block;
+	}
+	if (write) 
+	{
+		int found = 0;
+		int32_t dir_itr;
+		struct dir_entry_s *dir_entry;
+
+		for(dir_itr = 0; dir_itr < DIR_ENTRY_SIZE; dir_itr++)
+		{
+			read_dir_entry(block, dir_itr, dir_entry);
+			if (!strcmp((char *)dir_entry->filename, path))
+			{
+				block = dir_entry->first_block;
+				found = 1;
+				break;
+			}
+		}
+		if (found)
+		{
+			signed char* wcontent = (signed char*)content;
+			write_block("filesystem.dat", block, wcontent);
+			printf("> ok\n");
+		}
+		else
+		{
+			printf("> '%s' doesn't exist\n", path);
+		}
+	}
+}
+
+
 /* enters a directory sequence */
-void cd(char *path)
+void mcd(char *path)
 {
 	if (strstr(path, "~"))
 	{

@@ -17,18 +17,22 @@
     
     */
 
-    void init(void);
+    void minit(void);
 
-    void load(void);
+    void mload(void);
 
-    void ls(void);
+    void mls(void);
 
-    void mkdir(char *path);
+    void mmkdir(char *path);
 
-    void create(char *path);
+    void mcreate(char *path);
 
-    void rm(char *path);
+    void munlink(char *path);
 
-    void cd(char *path);
+    void mread(char *path);
+
+    void mwrite(char *path, char *content);
+
+    void mcd(char *path);
 
 #endif
