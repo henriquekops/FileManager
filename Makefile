@@ -1,8 +1,8 @@
 
 all: run
 
-run: filesystem.o shell.o auxiliary.o default.o
-	gcc -o run filesystem.o shell.o auxiliary.o default.o
+run: filesystem.o shell.o auxiliary.o manipulators.o
+	gcc -o run filesystem.o shell.o auxiliary.o manipulators.o
 
 filesystem.o: src/filesystem.c
 	gcc -o filesystem.o -c src/filesystem.c -Iinc

@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 				printf("%s", init_error_message);
 			}
 			else 
-			{
+			{ 
 				scanf("%s", s_command);
 				scanf("%s", t_command);
 				mwrite(s_command, t_command);

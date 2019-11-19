@@ -5,9 +5,6 @@
         Henrique R. Kops
 */
 
-// built-in dependencies
-#include <stdint.h>
-
 #ifndef SHELL_H
 #define SHELL_H
 

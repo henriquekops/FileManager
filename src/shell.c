@@ -360,7 +360,7 @@ void mwrite(char *path, char *content)
 	{
 		int found = 0;
 		int32_t dir_itr;
-		struct dir_entry_s *dir_entry;
+		struct dir_entry_s *dir_entry = (struct dir_entry_s *)malloc(sizeof(struct dir_entry_s));
 
 		for(dir_itr = 0; dir_itr < DIR_ENTRY_SIZE; dir_itr++)
 		{
@@ -372,10 +372,10 @@ void mwrite(char *path, char *content)
 				break;
 			}
 		}
+
 		if (found)
 		{
-			signed char* wcontent = (signed char*)content;
-			write_block("filesystem.dat", block, wcontent);
+			write_block("filesystem.dat", block, (signed char*)content);
 			printf("> ok\n");
 		}
 		else

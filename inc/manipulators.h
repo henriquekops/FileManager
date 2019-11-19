@@ -9,8 +9,8 @@
 #include <stdint.h>
 #include <definitions.h>
 
-#ifndef MODELS_H
-#define MODELS_H
+#ifndef MANIPULATORS_H
+#define MANIPULATORS_H
 
 
     /*
