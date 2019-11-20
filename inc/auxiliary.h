@@ -21,7 +21,7 @@
 
     void write_extend_file(char* content, int32_t block);
 
-    void read_extend_file(char* content, int32_t block);
+    void read_extend_file(int32_t block);
 
     int16_t fat_free(void);
 
@@ -29,8 +29,10 @@
 
     int dir_is_empty(int16_t block);
 
-    struct dir_entry_s* iter_dirs(char *path, char *delimiter);
-
     void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, int32_t block, struct dir_entry_s dir_entry);
+
+    void unlink_chain(int entry, int32_t block);
+
+    struct dir_entry_s* iter_dirs(char *path, char *delimiter);
 
 #endif

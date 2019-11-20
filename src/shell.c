@@ -254,7 +254,7 @@ void munlink(char *path)
 				{
 					int16_t block = dir_entry.first_block;
 
-					if(fat[block] == 0x7ffe)
+					if(fat[block] == 0x7fff)
 					{
 						fat[block] = 0;
 						create_dir_entry("", 0x00, 0, entry, block, dir_entry);
@@ -262,15 +262,7 @@ void munlink(char *path)
 					}
 					else
 					{
-						int16_t link;
-						struct dir_entry_s rem_entry;
-						do
-						{
-							link = fat[block];
-							fat[block] = 0;
-							create_dir_entry("", 0x00, 0, entry, block, rem_entry);
-							block = link;
-						} while (fat[block] != 0x7ffe);
+						unlink_chain(entry, block);
 					}
 				}
 				else if (dir_entry.attributes == 0x02)
@@ -286,8 +278,8 @@ void munlink(char *path)
 						printf("> you need to empty directory '%s' first\n", dir_entry.filename);
 					}
 				}
+				break;
 			}
-			break;
 		}
 		if (!found) 
 		{
@@ -342,9 +334,7 @@ void mread(char *path)
 		}
 		if (found)
 		{
-			signed char *content = (signed char*)malloc(BLOCK_SIZE*sizeof(signed char));
-			read_block("filesystem.dat", block, content);
-			printf("\n%s\n", content);
+			read_extend_file(block);
 		}
 		else
 		{
@@ -409,17 +399,9 @@ void mwrite(char *path, char *content)
 
 		if (found && !is_dir)
 		{
-			if(fat[block] != 0x7ffe)
+			if (fat[block] != 0x7fff)
 			{
-				int16_t link;
-				struct dir_entry_s rem_entry;
-				do
-				{
-					link = fat[block];
-					fat[block] = 0;
-					create_dir_entry("", 0x00, 0, entry, block, rem_entry);
-					block = link;
-				} while (fat[block] != 0x7ffe);
+				unlink_chain(entry, block);
 			}
 			write_extend_file(content, block);
 		}

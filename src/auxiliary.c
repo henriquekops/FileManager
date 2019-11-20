@@ -95,50 +95,25 @@ void write_extend_file(char* content, int32_t block)
 
 
 /* read an extended file */
-void read_extend_file(char* content, int32_t block)
+void read_extend_file(int32_t block)
 {
-	if(block == 2048 && fat[block] != 0)
+	/*
+	signed char *content = (signed char*)malloc(BLOCK_SIZE*sizeof(signed char));
+	read_block("filesystem.dat", block, content);
+
+	int16_t link;
+	struct dir_entry_s dir_entry;
+	do
 	{
-		printf("> not enough space in file system\n");
-	}
-	else
-	{
-		int length = strlen(content);
-
-		if (length <= 1024)
-		{
-			write_block("filesystem.dat", block, (signed char*)content);
-			fat[block] = 0x7fff;
-		}
-		else
-		{
-			int split_itr, split = floor(length/BLOCK_SIZE);
-
-			for (split_itr = 0; split_itr < split; split_itr++)
-			{
-				char *part = malloc(BLOCK_SIZE*sizeof(char*));
-				memcpy(part, content+(BLOCK_SIZE*split_itr), BLOCK_SIZE*sizeof(char*));
-				write_block("filesystem.dat", block, (signed char*)part);
-
-				if(split_itr == split-1)
-				{
-					printf("ultimo bloco: %d\n", block);
-					fat[block] = 0x7fff;
-				}
-				else
-				{
-					printf("colocando no bloco: %d\n", block);
-
-					fat[block] = fat_free();
-					printf("associando fat(%d)->", block);
-					block = fat_free();
-					printf("fat(%d)\n", block);
-				}
-			}
-			write_fat("filesystem.dat", fat);
-			printf("> ok\n");
-		}
-	}
+		printf("bloco %d nao e final\n", block);
+		link = fat[block];
+		printf("salvando referencia para o bloco %d\n", link);
+		fat[block] = 0;
+		create_dir_entry("", 0x00, 0, entry, block, dir_entry);
+		printf("dados do bloco %d zerados\n\n", block);
+		block = link;
+	} while (fat[block] != 0x7fff);
+	*/
 }
 
 
@@ -201,6 +176,25 @@ void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, in
 	dir_entry.first_block = first_block;
 	dir_entry.size = 0;
 	write_dir_entry(block, entry, &dir_entry);
+}
+
+
+/* unlinks a fat reference chain */
+void unlink_chain(int entry, int32_t block)
+{
+	int16_t link;
+	struct dir_entry_s dir_entry;
+	while (fat[block] != 0x7fff)
+	{
+		printf("bloco %d nao e final\n", block);
+		link = fat[block];
+		printf("salvando referencia para o bloco %d\n", link);
+		fat[block] = 0;
+		create_dir_entry("", 0x00, 0, entry, block, dir_entry);
+		printf("dados do bloco %d zerados\n\n", block);
+		block = link;
+	}
+	printf("bloco restante %d", block);
 }
 
 
