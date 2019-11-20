@@ -50,11 +50,12 @@
 /* system execution */
 int main(int argc, char *argv[])
 {
-	char f_command [10];	// obrigartory command in runtime	(e.g.	${init} )
-	char s_command [500];	// optional path field				(e.g.	$create {path} )
-	char t_command [1024];	// optional file content			( e.g.	$write path {content} )
+	char f_command [COMMAND_ENTRY];		// obrigartory command in runtime	(e.g.	${init} )
+	char s_command [PATH_ENTRY];		// optional path field				(e.g.	$create {path} )
+	char t_command [CONTENT_ENTRY];		// optional file content			( e.g.	$write path {content} )
 
-	int fat_in_memory = 0;	// validate initialization
+	/* validate initialization */
+	int fat_in_memory = 0;
 	char *init_error_message = "> please, use $init or $load first\n";
 
 	cls_screen();
@@ -165,7 +166,7 @@ int main(int argc, char *argv[])
 			else 
 			{
 				scanf("%s", s_command);
-				scanf("%[^\n]s", t_command);
+				fgets(t_command, CONTENT_ENTRY, stdin);
 				mwrite(s_command, t_command);
 			}
 		}

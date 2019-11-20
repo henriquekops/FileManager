@@ -17,7 +17,6 @@
 
     */
 
-
     #define BLOCK_SIZE		1024 							// size of a data block
     #define BLOCKS			2048 							// quantity of blocks
     #define FAT_SIZE		(BLOCKS * 2) 					// size of fat (4096 = 2048 * 16 bits - HEX)
@@ -25,6 +24,9 @@
     #define ROOT_BLOCK		FAT_BLOCKS 						// position of root block (5)
     #define DIR_ENTRY_SIZE	32 								// size of dir entries
     #define DIR_ENTRIES		(BLOCK_SIZE / DIR_ENTRY_SIZE) 	// quantity of dir entries
+    #define COMMAND_ENTRY   10                              // bytes for principal shell command entry
+    #define PATH_ENTRY      500                             // bytes for path entry
+    #define CONTENT_ENTRY   10000                           // bytes for file content entry
 
 
     /*

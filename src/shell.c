@@ -341,7 +341,7 @@ void mread(char *path)
 void mwrite(char *path, char *content)
 {
 	int32_t block, entry;
-	int is_path = 0, write = 1;
+	int is_path = 0, write = 1, found = 0, is_dir = 0;
 	struct dir_entry_s *navigate_dir = NULL;
 	struct dir_entry_s *dir_entry = (struct dir_entry_s *)malloc(sizeof(struct dir_entry_s));
 
@@ -367,28 +367,34 @@ void mwrite(char *path, char *content)
 	}
 	if (write) 
 	{
-		int found = 0;
 
 		for(entry = 0; entry < DIR_ENTRY_SIZE; entry++)
 		{
 			read_dir_entry(block, entry, dir_entry);
 			if (!strcmp((char *)dir_entry->filename, path))
 			{
-				dir_entry->size = strlen(content);
-				write_dir_entry(block, entry, dir_entry);
-				
-				block = dir_entry->first_block;
 				found = 1;
-				break;
+				if(dir_entry->attributes == 0x01)
+				{
+					dir_entry->size = strlen(content);
+					write_dir_entry(block, entry, dir_entry);
+
+					block = dir_entry->first_block;
+					break;
+				}
+				else
+				{					
+					is_dir = 1;
+					printf("> '%s' is a directory\n", (char*)dir_entry->filename);
+				}
 			}
 		}
 
-		if (found)
+		if (found && !is_dir)
 		{
-			write_block("filesystem.dat", block, (signed char*)content);
-			printf("> ok\n");
+			extend_file(content, block);
 		}
-		else
+		else if (!found)
 		{
 			printf("> '%s' doesn't exist\n", path);
 		}

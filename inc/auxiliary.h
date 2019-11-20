@@ -19,6 +19,8 @@
 
    void cls_screen(void);
 
+   void extend_file(char* content, int32_t block);
+
    int16_t fat_free(void);
 
    int32_t dir_free(int32_t block, char *filename);

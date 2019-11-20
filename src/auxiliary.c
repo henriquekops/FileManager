@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 // project dependencies
 #include <manipulators.h>
@@ -27,6 +28,23 @@ void cls_screen(void)
 {
 	int i;
 	for(i = 0; i < 1000; i++) printf("\n");
+}
+
+
+/* extend a file when its size is greater than 1024b */
+void extend_file(char* content, int32_t block)
+{
+	int length = strlen(content);
+	if (length <= 1024)
+	{
+		write_block("filesystem.dat", block, (signed char*)content);
+		printf("> ok\n");
+	}
+	else
+	{
+		int split = floor(length/1024);
+		printf("splitting into %d parts...", split);
+	}
 }
 
 
