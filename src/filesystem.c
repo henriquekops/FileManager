@@ -14,6 +14,29 @@
 #include <definitions.h>
 #include <shell.h>
 
+#define HELP_STRING "Commands: \n"\
+	"\tExample:\n"\
+	"\t\t$ {command}: {explanation} {accepts path}\n\n"\
+	"\tDefinitions: \n"\
+	"\t\t$ init\t\t:\tReset system\t\t\t\t0\n"\
+	"\t\t$ load\t\t:\tLoad system data from filesystem.dat\t0\n"\
+	"\t\t$ ls\t\t:\tList current directory entries\t\t0\n"\
+	"\t\t$ mkdir\t\t:\tCreate a directory entry\t\t1\n"\
+	"\t\t$ create\t:\tCreate a file in a directory\t\t1\n"\
+	"\t\t$ unlink\t:\tDelete a file or directory\t\t1\n"\
+	"\t\t$ read\t\t:\tRead a file's content\t\t\t1\n"\
+	"\t\t$ write\t\t:\tWrite content to a file\t\t\t1\n"\
+	"\t\t$ append\t:\tAppend content to a file\t\t0\n\n"\
+	"\tSystem calls: \n"\
+	"\t\t$ init\n"\
+	"\t\t$ load\n"\
+	"\t\t$ ls\n"\
+	"\t\t$ mkdir {path/to/directory/new_dir}\n"\
+	"\t\t$ create {path/to/directory/new_file}\n"\
+	"\t\t$ unlink {path/to/directory_or_file}\n"\
+	"\t\t$ read {path/to/file}\n"\
+	"\t\t$ write {path/to/file}\n"\
+	"\t\t$ append not coded yet...\n"
 
 
 /*
@@ -183,31 +206,7 @@ int main(int argc, char *argv[])
 		// HELP
 		else if (strstr(f_command, "help"))
 		{
-			printf(
-				"Commands: \n"\
-				"\tExample:\n"\
-				"\t\t$ {command}: {explanation} {accepts path}\n\n"\
-				"\tDefinitions: \n"\
-				"\t\t$ init\t\t:\tReset system\t\t\t\t0\n"\
-				"\t\t$ load\t\t:\tLoad system data from filesystem.dat\t0\n"\
-				"\t\t$ ls\t\t:\tList current directory entries\t\t0\n"\
-				"\t\t$ mkdir\t\t:\tCreate a directory entry\t\t1\n"\
-				"\t\t$ create\t:\tCreate a file in a directory\t\t1\n"\
-				"\t\t$ unlink\t:\tDelete a file or directory\t\t1\n"\
-				"\t\t$ read\t\t:\tRead a file's content\t\t\t1\n"\
-				"\t\t$ write\t\t:\tWrite content to a file\t\t\t1\n"\
-				"\t\t$ append\t:\tAppend content to a file\t\t0\n\n"\
-				"\tSystem calls: \n"\
-				"\t\t$ init\n"\
-				"\t\t$ load\n"\
-				"\t\t$ ls\n"\
-				"\t\t$ mkdir {path/to/directory/new_dir}\n"\
-				"\t\t$ create {path/to/directory/new_file}\n"\
-				"\t\t$ unlink {path/to/directory_or_file}\n"\
-				"\t\t$ read {path/to/file}\n"\
-				"\t\t$ write {path/to/file}\n"\
-				"\t\t$ append not coded yet...\n"
-			);
+			printf(HELP_STRING);
 		}
 		
 		// EXIT

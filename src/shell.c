@@ -338,9 +338,10 @@ void mread(char *path)
 
 void mwrite(char *path, char *content)
 {
-	int32_t block;
+	int32_t block, entry;
 	int is_path = 0, write = 1;
 	struct dir_entry_s *navigate_dir = NULL;
+	struct dir_entry_s *dir_entry = (struct dir_entry_s *)malloc(sizeof(struct dir_entry_s));
 
 	if (strstr(path, "/"))
 	{
@@ -365,14 +366,15 @@ void mwrite(char *path, char *content)
 	if (write) 
 	{
 		int found = 0;
-		int32_t dir_itr;
-		struct dir_entry_s *dir_entry = (struct dir_entry_s *)malloc(sizeof(struct dir_entry_s));
 
-		for(dir_itr = 0; dir_itr < DIR_ENTRY_SIZE; dir_itr++)
+		for(entry = 0; entry < DIR_ENTRY_SIZE; entry++)
 		{
-			read_dir_entry(block, dir_itr, dir_entry);
+			read_dir_entry(block, entry, dir_entry);
 			if (!strcmp((char *)dir_entry->filename, path))
 			{
+				dir_entry->size = strlen(content);
+				write_dir_entry(block, entry, dir_entry);
+				
 				block = dir_entry->first_block;
 				found = 1;
 				break;
