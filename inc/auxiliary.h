@@ -17,18 +17,20 @@
     
     */
 
-   void cls_screen(void);
+    void cls_screen(void);
 
-   void extend_file(char* content, int32_t block);
+    void write_extend_file(char* content, int32_t block);
 
-   int16_t fat_free(void);
+    void read_extend_file(char* content, int32_t block);
 
-   int32_t dir_free(int32_t block, char *filename);
+    int16_t fat_free(void);
 
-   int dir_is_empty(int16_t block);
-   
-   struct dir_entry_s* iter_dirs(char *path, char *delimiter);
+    int32_t dir_free(int32_t block, char *filename);
 
-   void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, int32_t block, struct dir_entry_s dir_entry);
-   
+    int dir_is_empty(int16_t block);
+
+    struct dir_entry_s* iter_dirs(char *path, char *delimiter);
+
+    void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, int32_t block, struct dir_entry_s dir_entry);
+
 #endif

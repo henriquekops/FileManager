@@ -31,23 +31,6 @@ void cls_screen(void)
 }
 
 
-/* extend a file when its size is greater than 1024b */
-void extend_file(char* content, int32_t block)
-{
-	int length = strlen(content);
-	if (length <= 1024)
-	{
-		write_block("filesystem.dat", block, (signed char*)content);
-		printf("> ok\n");
-	}
-	else
-	{
-		int split = floor(length/1024);
-		printf("splitting into %d parts...", split);
-	}
-}
-
-
 /* check for the first free block in FAT */
 int16_t fat_free(void) 
 {
@@ -60,6 +43,102 @@ int16_t fat_free(void)
 		}
 	}
 	return first_block;
+}
+
+
+/* extend a file when its size is greater than 1024b */
+void write_extend_file(char* content, int32_t block)
+{
+	if(block == 2048 && fat[block] != 0)
+	{
+		printf("> not enough space in file system\n");
+	}
+	else
+	{
+		int length = strlen(content);
+
+		if (length <= 1024)
+		{
+			write_block("filesystem.dat", block, (signed char*)content);
+			fat[block] = 0x7fff;
+		}
+		else
+		{
+			int split_itr, split = floor(length/BLOCK_SIZE);
+
+			for (split_itr = 0; split_itr < split; split_itr++)
+			{
+				char *part = malloc(BLOCK_SIZE*sizeof(char*));
+				memcpy(part, content+(BLOCK_SIZE*split_itr), BLOCK_SIZE*sizeof(char*));
+				write_block("filesystem.dat", block, (signed char*)part);
+
+				if(split_itr == split-1)
+				{
+					printf("ultimo bloco: %d\n", block);
+					fat[block] = 0x7fff;
+				}
+				else
+				{
+					printf("colocando no bloco: %d\n", block);
+
+					fat[block] = fat_free();
+					printf("associando fat(%d)->", block);
+					block = fat_free();
+					printf("fat(%d)\n", block);
+				}
+			}
+			write_fat("filesystem.dat", fat);
+			printf("> ok\n");
+		}
+	}
+}
+
+
+/* read an extended file */
+void read_extend_file(char* content, int32_t block)
+{
+	if(block == 2048 && fat[block] != 0)
+	{
+		printf("> not enough space in file system\n");
+	}
+	else
+	{
+		int length = strlen(content);
+
+		if (length <= 1024)
+		{
+			write_block("filesystem.dat", block, (signed char*)content);
+			fat[block] = 0x7fff;
+		}
+		else
+		{
+			int split_itr, split = floor(length/BLOCK_SIZE);
+
+			for (split_itr = 0; split_itr < split; split_itr++)
+			{
+				char *part = malloc(BLOCK_SIZE*sizeof(char*));
+				memcpy(part, content+(BLOCK_SIZE*split_itr), BLOCK_SIZE*sizeof(char*));
+				write_block("filesystem.dat", block, (signed char*)part);
+
+				if(split_itr == split-1)
+				{
+					printf("ultimo bloco: %d\n", block);
+					fat[block] = 0x7fff;
+				}
+				else
+				{
+					printf("colocando no bloco: %d\n", block);
+
+					fat[block] = fat_free();
+					printf("associando fat(%d)->", block);
+					block = fat_free();
+					printf("fat(%d)\n", block);
+				}
+			}
+			write_fat("filesystem.dat", fat);
+			printf("> ok\n");
+		}
+	}
 }
 
 

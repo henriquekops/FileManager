@@ -246,15 +246,32 @@ void munlink(char *path)
 		{
 			read_dir_entry(block, entry, &dir_entry);
 
-			if (!strcmp((char *)&dir_entry.filename[0], path))
+			if (strcmp((char *)&dir_entry.filename[0], path) == 0)
 			{
 				found = 1;
 
 				if (dir_entry.attributes == 0x01) 
 				{
-					fat[dir_entry.first_block] = 0;
-					create_dir_entry("", 0x00, 0, entry, block, dir_entry);
-					printf("> ok\n");
+					int16_t block = dir_entry.first_block;
+
+					if(fat[block] == 0x7ffe)
+					{
+						fat[block] = 0;
+						create_dir_entry("", 0x00, 0, entry, block, dir_entry);
+						printf("> ok\n");
+					}
+					else
+					{
+						int16_t link;
+						struct dir_entry_s rem_entry;
+						do
+						{
+							link = fat[block];
+							fat[block] = 0;
+							create_dir_entry("", 0x00, 0, entry, block, rem_entry);
+							block = link;
+						} while (fat[block] != 0x7ffe);
+					}
 				}
 				else if (dir_entry.attributes == 0x02)
 				{
@@ -392,7 +409,19 @@ void mwrite(char *path, char *content)
 
 		if (found && !is_dir)
 		{
-			extend_file(content, block);
+			if(fat[block] != 0x7ffe)
+			{
+				int16_t link;
+				struct dir_entry_s rem_entry;
+				do
+				{
+					link = fat[block];
+					fat[block] = 0;
+					create_dir_entry("", 0x00, 0, entry, block, rem_entry);
+					block = link;
+				} while (fat[block] != 0x7ffe);
+			}
+			write_extend_file(content, block);
 		}
 		else if (!found)
 		{
