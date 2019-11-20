@@ -87,6 +87,18 @@ int dir_is_empty(int16_t block)
 }
 
 
+/* create a DIRECTORY ENTRY */
+void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, int32_t block, struct dir_entry_s dir_entry)
+{
+	memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
+	strcpy((char *)dir_entry.filename, filename);
+	dir_entry.attributes = attributes;
+	dir_entry.first_block = first_block;
+	dir_entry.size = 0;
+	write_dir_entry(block, entry, &dir_entry);
+}
+
+
 /* search folder through argued path */
 struct dir_entry_s* iter_dirs(char *path, char *delimiter)
 {
@@ -138,16 +150,4 @@ struct dir_entry_s* iter_dirs(char *path, char *delimiter)
 		token = strtok(NULL, "/");
 	}
 	return dir_entry;
-}
-
-
-/* create a DIRECTORY ENTRY */
-void create_dir_entry(char *filename, int8_t attributes, int32_t first_block, int32_t entry, int32_t block, struct dir_entry_s dir_entry)
-{
-	memset((char *)dir_entry.filename, 0, sizeof(struct dir_entry_s));
-	strcpy((char *)dir_entry.filename, filename);
-	dir_entry.attributes = attributes;
-	dir_entry.first_block = first_block;
-	dir_entry.size = 0;
-	write_dir_entry(block, entry, &dir_entry);
 }
