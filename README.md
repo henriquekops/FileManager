@@ -1,6 +1,6 @@
 # FileManager
 
-### How to use (in 3 commands):
+### How to use (in 3 easy steps):
 
 1. Compile modules, create object codes, link dependencies and create executable with command ```make all```
 
