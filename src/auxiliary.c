@@ -22,6 +22,14 @@
 */
 
 
+/* clear terminal window */
+void cls_screen(void)
+{
+	int i;
+	for(i = 0; i < 1000; i++) printf("\n");
+}
+
+
 /* check for the first free block in FAT */
 int16_t fat_free(void) 
 {

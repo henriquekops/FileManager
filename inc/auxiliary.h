@@ -17,6 +17,8 @@
     
     */
 
+   void cls_screen(void);
+
    int16_t fat_free(void);
 
    int32_t dir_free(int32_t block, char *filename);

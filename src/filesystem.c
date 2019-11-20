@@ -12,6 +12,7 @@
 // project dependencies
 #include <manipulators.h>
 #include <definitions.h>
+#include <auxiliary.h>
 #include <shell.h>
 
 #define HELP_STRING "Commands: \n"\
@@ -45,13 +46,6 @@
 
 */
 
-
-/* clear terminal window */
-void cls_screen(void)
-{
-	int i;
-	for(i = 0; i < 1000; i++) printf("\n");
-}
 
 /* system execution */
 int main(int argc, char *argv[])
