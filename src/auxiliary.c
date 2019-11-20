@@ -88,7 +88,7 @@ int dir_is_empty(int16_t block)
 
 
 /* search folder through argued path */
-struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
+struct dir_entry_s* iter_dirs(char *path, char *delimiter)
 {
 	int32_t entry;
 	struct dir_entry_s *dir_entry = (struct dir_entry_s*)malloc(sizeof(struct dir_entry_s));
@@ -118,12 +118,6 @@ struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 					else
 					{
 						block = dir_entry->first_block;
-
-						if(enter_dir)
-						{
-							actual_dir.block = block;
-							actual_dir.dirname = token;
-						}
 						break;
 					}
 				}
@@ -139,12 +133,6 @@ struct dir_entry_s* iter_dirs(char *path, char *delimiter, int enter_dir)
 		}
 		else 
 		{
-			if (enter_dir)
-			{
-				printf("> returning to root\n");
-				actual_dir.block = ROOT_BLOCK;
-				actual_dir.dirname = "root";
-			}
 			break;
 		}
 		token = strtok(NULL, "/");

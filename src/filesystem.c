@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
 		printf("\n$ ");
 		scanf("%s", f_command);
 
-		// cls_screen();
+		cls_screen();
 
 		// INIT
 		if (strstr(f_command, "init")) 
@@ -59,8 +59,11 @@ int main(int argc, char *argv[])
 		//LOAD
 		else if (strstr(f_command , "load")) 
 		{
-			mload();
-			fat_in_memory = 1;
+			int loaded = mload();
+			if (loaded)
+			{
+				fat_in_memory = 1;
+			}
 		}
 
 		// LS

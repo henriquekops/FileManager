@@ -16,7 +16,7 @@
 
     void minit(void);
 
-    void mload(void);
+    int mload(void);
 
     void mls(void);
 

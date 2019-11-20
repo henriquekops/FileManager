@@ -32,6 +32,10 @@ void minit(void)
 	int32_t fat_itr;
 	int32_t block_itr;
 
+	/* create filesystem.dat if it doesn't exist */
+	f = fopen("filesystem.dat", "a");
+	fclose(f);
+
 	/* initialize fat */
 	
 	for (fat_itr = 0; fat_itr < FAT_BLOCKS; fat_itr++) 
@@ -72,7 +76,7 @@ void minit(void)
 
 
 /* load FAT from disk */
-void mload(void)
+int mload(void)
 {
 	if (access( "filesystem.dat", F_OK ) != -1)
 	{
@@ -80,16 +84,18 @@ void mload(void)
 		actual_dir.block = ROOT_BLOCK;
 		actual_dir.dirname = "root";
 		printf("> ok\n");
+		return 1;
 	}
 	else
 	{
 		printf("> filesystem.dat does not exist\n");
+		return 0;
 	}
 }
 
 
 /* list entries starting from the root DIRECTORY ENTRY */
-void mls(void)
+void mls(char *path)
 {	
 	int32_t entry_itr;
 	struct dir_entry_s dir_entry;
@@ -101,7 +107,7 @@ void mls(void)
 	{
 		read_dir_entry(actual_dir.block, entry_itr, &dir_entry);
 		printf("%d\t|\t%d\t|\t%d\t|\t%d\t|\t%s\n", 
-			entry_itr, dir_entry.attributes, dir_entry.first_block, dir_entry.size, dir_entry.filename);
+			entry_itr, dir_entry.attributes, actual_dir.block, dir_entry.size, dir_entry.filename);
 	}
 }
 
@@ -116,7 +122,7 @@ void mmkdir(char *path)
 	if (strstr(path, "/"))
 	{
 		char *delimiter = strrchr(path, '/')+1;
-		navigate_dir = iter_dirs(path, delimiter, 0);
+		navigate_dir = iter_dirs(path, delimiter);
 		path = delimiter;
 		is_path = 1;
 	}
@@ -164,7 +170,7 @@ void mcreate(char *path)
 	if (strstr(path, "/"))
 	{
 		char *delimiter = strrchr(path, '/')+1;
-		navigate_dir = iter_dirs(path, delimiter, 0);
+		navigate_dir = iter_dirs(path, delimiter);
 		path = delimiter;
 		is_path = 1;
 	}
@@ -211,7 +217,7 @@ void munlink(char *path)
 	if (strstr(path, "/"))
 	{
 		char *delimiter = strrchr(path, '/')+1;
-		navigate_dir = iter_dirs(path, delimiter, 0);
+		navigate_dir = iter_dirs(path, delimiter);
 		path = delimiter;
 		is_path= 1;
 	}
@@ -283,7 +289,7 @@ void mread(char *path)
 	if (strstr(path, "/"))
 	{
 		char *delimiter = strrchr(path, '/')+1;
-		navigate_dir = iter_dirs(path, delimiter, 0);
+		navigate_dir = iter_dirs(path, delimiter);
 		path = delimiter;
 		is_path = 1;
 	}
@@ -339,7 +345,7 @@ void mwrite(char *path, char *content)
 	if (strstr(path, "/"))
 	{
 		char *delimiter = strrchr(path, '/')+1;
-		navigate_dir = iter_dirs(path, delimiter, 0);
+		navigate_dir = iter_dirs(path, delimiter);
 		path = delimiter;
 		is_path = 1;
 	}
@@ -397,8 +403,10 @@ void mcd(char *path)
 	}
 	else
 	{
-		struct dir_entry_s *dir_exists = iter_dirs(path, NULL, 1);
+		struct dir_entry_s *dir_exists = iter_dirs(path, NULL);
 		if (dir_exists) {
+			actual_dir.block = dir_exists->first_block;
+			actual_dir.dirname = (char*)dir_exists->filename;
 			printf("> now on '%s'\n", actual_dir.dirname);
 		}
 	}
