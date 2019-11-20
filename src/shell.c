@@ -107,7 +107,7 @@ void mls(char *path)
 	{
 		read_dir_entry(actual_dir.block, entry_itr, &dir_entry);
 		printf("%d\t|\t%d\t|\t%d\t|\t%d\t|\t%s\n", 
-			entry_itr, dir_entry.attributes, actual_dir.block, dir_entry.size, dir_entry.filename);
+			entry_itr, dir_entry.attributes, dir_entry.first_block, dir_entry.size, dir_entry.filename);
 	}
 }
 
@@ -116,7 +116,7 @@ void mls(char *path)
 void mmkdir(char *path) 
 {
 	int32_t block;
-	int is_path = 0, create = 1;
+	int is_path = 0, mkdir = 1;
 	struct dir_entry_s *navigate_dir = NULL;
 
 	if (strstr(path, "/"))
@@ -134,7 +134,7 @@ void mmkdir(char *path)
 	{
 		if (is_path)
 		{
-			create = 0;
+			mkdir = 0;
 		}
 		else
 		{
@@ -142,13 +142,13 @@ void mmkdir(char *path)
 		}
 	}
 
-	if (create)
+	if (mkdir)
 	{
 		struct dir_entry_s dir_entry;
 		int16_t first_block = fat_free();
 		int32_t entry = dir_free(block, path);
 
-		if (entry >= 0)
+		if (entry >= 0 && fat[first_block] == 0)
 		{
 			create_dir_entry(path, 0x02, first_block, entry, block, dir_entry);
 			fat[first_block] = 0x7ffd;
@@ -194,7 +194,7 @@ void mcreate(char *path)
 		int16_t first_block = fat_free();
 		int32_t entry = dir_free(block, path);
 
-		if (entry >= 0) 
+		if (entry >= 0 && fat[first_block] == 0) 
 		{
 			create_dir_entry(path, 0x01, first_block, entry, block, dir_entry);
 
@@ -280,6 +280,7 @@ void munlink(char *path)
 }
 
 
+/* read a file's content from argued path */
 void mread(char *path)
 {
 	int32_t block;
@@ -336,6 +337,7 @@ void mread(char *path)
 }
 
 
+/* write a file's content into its corresponding path */
 void mwrite(char *path, char *content)
 {
 	int32_t block, entry;
